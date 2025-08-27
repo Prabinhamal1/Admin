@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useNews } from '../context/NewsContext'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { formatDateLong } from '../lib/date'
 import { 
   ArrowLeft, 
   Eye, 
@@ -116,22 +118,10 @@ const NewsDetail = () => {
     }
   }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  const formatDate = (dateString) => formatDateLong(dateString)
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   if (!newsItem) {

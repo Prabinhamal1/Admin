@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNews } from '../context/NewsContext'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { formatDateShort } from '../lib/date'
 import { 
   Search, 
   Filter, 
@@ -43,13 +45,7 @@ const NewsManagement = ({ title = 'Raw News' }) => {
       }
     })
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
+  const formatDate = (dateString) => formatDateShort(dateString)
 
   const handleGenerate = async () => {
     setFetching(true)
@@ -62,11 +58,7 @@ const NewsManagement = ({ title = 'Raw News' }) => {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (

@@ -69,7 +69,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const loginPath = import.meta.env.VITE_AUTH_LOGIN_PATH || '/api/user/login'
       const res = await api.post(loginPath, { username, password })
-      console.log('Login Response:', res)  // Log the full response
       const jwt = extractToken(res)
       if (!jwt) throw new Error('Token missing in response')
 

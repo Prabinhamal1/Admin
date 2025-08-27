@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { useUsers } from '../context/UserContext'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { formatDateShort, formatRelativeHours } from '../lib/date'
 import { 
   Search, 
   Filter, 
@@ -48,27 +50,9 @@ const UserManagement = () => {
       }
     })
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
+  const formatDate = (dateString) => formatDateShort(dateString)
 
-  const formatLastLogin = (dateString) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
-    
-    if (diffInHours < 24) {
-      return `${diffInHours} hours ago`
-    } else if (diffInHours < 168) { // 7 days
-      return `${Math.floor(diffInHours / 24)} days ago`
-    } else {
-      return formatDate(dateString)
-    }
-  }
+  const formatLastLogin = (dateString) => formatRelativeHours(dateString)
 
   const handleStatusToggle = (userId, currentStatus) => {
     const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active'
@@ -76,11 +60,7 @@ const UserManagement = () => {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
