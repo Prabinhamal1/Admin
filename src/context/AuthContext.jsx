@@ -67,13 +67,16 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     setLoading(true)
     try {
-      const res = await api.post('/api/user/login', { username, password })
+      const loginPath = import.meta.env.VITE_AUTH_LOGIN_PATH || '/api/user/login'
+      const res = await api.post(loginPath, { username, password })
       console.log('Login Response:', res)  // Log the full response
       const jwt = extractToken(res)
       if (!jwt) throw new Error('Token missing in response')
 
       const userInfo = extractUser(res, username, jwt)
-      const allowedRoles = ['ADMIN', 'MODERATOR']
+      const allowedRoles = (import.meta.env.VITE_AUTH_ALLOWED_ROLES || 'ADMIN,MODERATOR')
+        .split(',')
+        .map((r) => r.trim().toUpperCase())
 
       if (!userInfo.roles.some((role) => allowedRoles.includes(role))) {
         throw new Error('Unauthorized role')
@@ -103,7 +106,10 @@ export const AuthProvider = ({ children }) => {
 
   const hasAllowedRole = () => {
     const roles = user?.roles || []
-    return roles.some((role) => ['ADMIN', 'MODERATOR'].includes(role))
+    const allowed = (import.meta.env.VITE_AUTH_ALLOWED_ROLES || 'ADMIN,MODERATOR')
+      .split(',')
+      .map((r) => r.trim().toUpperCase())
+    return roles.some((role) => allowed.includes(role))
   }
 
   return (
