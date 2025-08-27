@@ -10,19 +10,16 @@ const Login = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('') // Clear previous errors
+    setError('')
 
-    // Call the login function from the AuthContext
-    const { ok, error } = await login(username, password)
+    const { ok, message } = await login(username, password)
 
-    // If login is successful, navigate to the home page
     if (ok) {
-      navigate('/') // Redirect to home page (or wherever you need)
+      navigate('/')
     } else {
-      setError(error || 'Invalid credentials or unauthorized role') // Show error if login fails
+      setError(message || 'Invalid credentials or unauthorized role')
     }
   }
 
@@ -31,7 +28,6 @@ const Login = () => {
       <div className="w-full max-w-md card">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Login</h1>
         
-        {/* Show error message if login fails */}
         {error && (
           <div className="mb-4 p-3 rounded bg-red-50 text-red-700 border border-red-200 text-sm">
             {error}

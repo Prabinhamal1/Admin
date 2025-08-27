@@ -13,8 +13,10 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const path = (config?.url || '').toString()
   const loginPath = import.meta.env.VITE_AUTH_LOGIN_PATH || '/api/user/login'
+  const refreshPath = import.meta.env.VITE_AUTH_REFRESH_PATH || '/api/user/refresh'
   const isLogin = path.includes(loginPath)
-  if (!isLogin) {
+  const isRefresh = path.includes(refreshPath)
+  if (!isLogin && !isRefresh) {
     const token = localStorage.getItem('auth_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -71,7 +73,9 @@ api.interceptors.response.use(
       try {
         const response = await api.post(refreshPath)
         const data = response?.data || {}
-        const newToken = data.token || data.accessToken || data.jwt
+        const headerAuth = response?.headers?.authorization || response?.headers?.Authorization
+        const headerToken = headerAuth?.startsWith('Bearer ') ? headerAuth.slice(7) : undefined
+        const newToken = data.token || data.accessToken || data.jwt || headerToken
         if (!newToken) throw new Error('Missing token from refresh response')
 
         localStorage.setItem('auth_token', newToken)

@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
   const extractUser = (response, fallbackUsername, jwt) => {
     const data = response?.data || {}
     const user = data.user || data.account || data.principal || {}
-    const username = user.username || user.email || data.username || data.email || fallbackUsername
+    const username = user.username || user.email || data.username || data.email || fallbackUsername || decodeJwt(jwt).sub || decodeJwt(jwt).username || decodeJwt(jwt).email
     let roles = normalizeRoles(user.roles || data.roles || data.authorities)
 
     if (!roles.length && jwt) {
@@ -64,11 +64,50 @@ export const AuthProvider = ({ children }) => {
     return { username, roles }
   }
 
+  const buildLoginPayload = (username, password) => {
+    const userKey = (import.meta.env.VITE_AUTH_USERNAME_KEY || 'username').trim()
+    const passKey = (import.meta.env.VITE_AUTH_PASSWORD_KEY || 'password').trim()
+    const payload = {}
+    payload[userKey] = username
+    payload[passKey] = password
+    return payload
+  }
+
+  const trySilentRefresh = async () => {
+    try {
+      const refreshPath = import.meta.env.VITE_AUTH_REFRESH_PATH || '/api/user/refresh'
+      const res = await api.post(refreshPath)
+      const jwt = extractToken(res)
+      if (!jwt) return { ok: false }
+      const userInfo = extractUser(res, null, jwt)
+      localStorage.setItem('auth_token', jwt)
+      localStorage.setItem('auth_user', JSON.stringify(userInfo))
+      setToken(jwt)
+      setUser(userInfo)
+      return { ok: true }
+    } catch {
+      return { ok: false }
+    }
+  }
+
+  useEffect(() => {
+    // Attempt silent refresh on mount if no token but refresh cookie may exist
+    if (!token) {
+      setLoading(true)
+      trySilentRefresh().finally(() => setLoading(false))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const login = async (username, password) => {
     setLoading(true)
     try {
       const loginPath = import.meta.env.VITE_AUTH_LOGIN_PATH || '/api/user/login'
-      const res = await api.post(loginPath, { username, password })
+      const asForm = String(import.meta.env.VITE_AUTH_LOGIN_FORM || '').toLowerCase() === 'true'
+      const payload = buildLoginPayload(username, password)
+      const dataToSend = asForm ? new URLSearchParams(payload) : payload
+      const headers = asForm ? { 'Content-Type': 'application/x-www-form-urlencoded' } : undefined
+      const res = await api.post(loginPath, dataToSend, { headers })
       const jwt = extractToken(res)
       if (!jwt) throw new Error('Token missing in response')
 
@@ -88,9 +127,15 @@ export const AuthProvider = ({ children }) => {
 
       return { ok: true }
     } catch (error) {
-      console.error('Login failed:', error?.response?.data || error?.message)
+      const msg = (
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Login failed'
+      )
+      console.error('Login failed:', msg)
       logout()
-      return { ok: false, error }
+      return { ok: false, message: msg }
     } finally {
       setLoading(false)
     }
